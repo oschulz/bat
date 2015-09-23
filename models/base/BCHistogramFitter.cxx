@@ -197,7 +197,7 @@ double BCHistogramFitter::LogLikelihood(const std::vector<double>& params)
     // the vector elements are not stored consecutively in memory.
     // however it is much faster than copying the contents, especially
     // for large number of parameters
-    fFitFunction->SetParameters(&params[0]);
+    if (fFlagIntegration) fFitFunction->SetParameters(&params[0]);
 
     // get the number of bins
     int nbins = fHistogram->GetNbinsX();
@@ -212,11 +212,12 @@ double BCHistogramFitter::LogLikelihood(const std::vector<double>& params)
         double y = fHistogram->GetBinContent(ibin);
 
         double yexp = 0.;
+        const double *paramsPtr = &params[0];
 
         if (fFlagIntegration)				// use ROOT's TH1D::Integral method
             yexp = fFitFunction->Integral(xmin, xmax);
         else												// use linear interpolation
-            yexp = (fFitFunction->Eval(xmin) + fFitFunction->Eval(xmax)) * (xmax - xmin) / 2.;
+            yexp = (fFitFunction->EvalPar(&xmin, paramsPtr) + fFitFunction->EvalPar(&xmin, paramsPtr)) * (xmax - xmin) / 2.;
 
         // get the value of the Poisson distribution
         loglikelihood += BCMath::LogPoisson(y, yexp);
